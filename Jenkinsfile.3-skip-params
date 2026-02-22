@@ -83,7 +83,7 @@ pipeline {
                 stage('Android Tests') {
                     when { expression { !params.SKIP_ANDROID_TESTS } }
                     steps {
-                        script { runStageWithCheck('Android Tests') { if (Math.random() < 0.5) throw new Exception('Random test failure'); echo 'Running Android tests...' } }
+                        script { runStageWithCheck('Android Tests') { throw new Exception('Random test failure') } }
                     }
                 }
             }
