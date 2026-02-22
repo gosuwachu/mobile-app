@@ -1,16 +1,101 @@
 // Option 3-MB: Parameterized Skip - Single Jenkinsfile with skip parameters
 // Publishes per-stage GitHub Checks for PR visibility
-// Re-run pipeline with SKIP_* parameters to resume from a point
+// Smart re-run: detects GitHub Check re-run and skips already-passed stages
+//
+import groovy.transform.Field
+
+@Field GITHUB_OWNER = 'gosuwachu'
+@Field GITHUB_REPO = 'jenkinsfiles-test-app'
+@Field CHECK_SUFFIX = '(3-MB)'
+
+// Maps stage display names to their SKIP_* parameter names
+@Field STAGE_TO_PARAM = [
+    'iOS Build':      'SKIP_IOS_BUILD',
+    'Android Build':  'SKIP_ANDROID_BUILD',
+    'iOS Tests':      'SKIP_IOS_TESTS',
+    'Android Tests':  'SKIP_ANDROID_TESTS',
+    'iOS Lint':       'SKIP_IOS_LINT',
+    'Android Lint':   'SKIP_ANDROID_LINT',
+    'iOS Deploy':     'SKIP_IOS_DEPLOY',
+    'Android Deploy': 'SKIP_ANDROID_DEPLOY',
+]
+
+// Detect if this build is a GitHub Check re-run and compute which stages to skip
+def computeRerunSkips(stageToParam, checkSuffix) {
+    def skips = [:]
+    stageToParam.each { stage, param -> skips[param] = false }
+
+    def rerunCauses = currentBuild.getBuildCauses(
+        'io.jenkins.plugins.checks.github.CheckRunGHEventSubscriber$GitHubChecksRerunActionCause'
+    )
+    if (!rerunCauses) {
+        echo 'Not a check re-run — running all stages normally'
+        return skips
+    }
+
+    echo "Detected GitHub Check re-run: ${rerunCauses[0]}"
+    echo 'Querying GitHub API for existing check statuses...'
+
+    def commitSha = env.GIT_COMMIT ?: sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
+
+    try {
+        def checksJson = ''
+        withCredentials([usernamePassword(credentialsId: 'github-app',
+                usernameVariable: 'GH_APP', passwordVariable: 'GH_TOKEN')]) {
+            checksJson = sh(script: """
+                curl -s -H "Authorization: token \$GH_TOKEN" \
+                     -H "Accept: application/vnd.github+json" \
+                     "https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/commits/${commitSha}/check-runs?per_page=100"
+            """, returnStdout: true).trim()
+        }
+
+        def checks = readJSON text: checksJson
+        def checkConclusions = [:]
+        checks.check_runs.each { cr ->
+            checkConclusions[cr.name] = cr.conclusion
+        }
+
+        echo "Found ${checkConclusions.size()} check runs for commit ${commitSha}"
+
+        stageToParam.each { stageName, skipParam ->
+            def fullCheckName = "${stageName} ${checkSuffix}"
+            def conclusion = checkConclusions[fullCheckName]
+            if (conclusion == 'success') {
+                echo "  SKIP ${stageName} — already SUCCESS"
+                skips[skipParam] = true
+            } else {
+                echo "  RUN  ${stageName} — conclusion: ${conclusion ?: 'not found'}"
+            }
+        }
+
+        // If ALL stages would be skipped, run everything (user explicitly re-ran a passed check)
+        if (skips.values().every { it }) {
+            echo 'All checks already passed — re-running everything'
+            skips.each { k, v -> skips[k] = false }
+        }
+    } catch (e) {
+        echo "WARNING: GitHub API call failed: ${e.message}. Running all stages."
+        skips.each { k, v -> skips[k] = false }
+    }
+
+    return skips
+}
 
 def runStageWithCheck(String checkName, Closure body) {
-    publishChecks name: checkName, status: 'IN_PROGRESS', summary: "Running ${checkName}..."
+    def fullCheckName = "${checkName} ${CHECK_SUFFIX}"
+    publishChecks name: fullCheckName, status: 'IN_PROGRESS', summary: "Running ${checkName}..."
     try {
         body()
-        publishChecks name: checkName, status: 'COMPLETED',
+        publishChecks name: fullCheckName, status: 'COMPLETED',
             conclusion: 'SUCCESS', summary: "${checkName} passed"
     } catch (e) {
-        publishChecks name: checkName, status: 'COMPLETED',
-            conclusion: 'FAILURE', summary: "${checkName} failed: ${e.message}"
+        def rerunLink = ''
+        if (env.JOB_URL) {
+            def encodedStage = java.net.URLEncoder.encode(checkName, 'UTF-8')
+            rerunLink = "\n\n[Re-run only ${checkName}](${env.JOB_URL}buildWithParameters?ONLY_STAGE=${encodedStage})"
+        }
+        publishChecks name: fullCheckName, status: 'COMPLETED',
+            conclusion: 'FAILURE', summary: "${checkName} failed: ${e.message}${rerunLink}"
         throw e
     }
 }
@@ -27,6 +112,7 @@ pipeline {
         booleanParam(name: 'SKIP_ANDROID_LINT', defaultValue: false, description: 'Skip Android Lint stage')
         booleanParam(name: 'SKIP_IOS_DEPLOY', defaultValue: false, description: 'Skip iOS Deploy stage')
         booleanParam(name: 'SKIP_ANDROID_DEPLOY', defaultValue: false, description: 'Skip Android Deploy stage')
+        string(name: 'ONLY_STAGE', defaultValue: '', description: 'If set, run only this stage (e.g. "Android Tests"). Leave empty to run all.')
     }
 
     stages {
@@ -34,21 +120,34 @@ pipeline {
             steps {
                 script {
                     echo 'Starting Mobile CI/CD Pipeline (Skip Params)...'
-                    // Mark skipped stages as neutral
-                    def skipMap = [
-                        'SKIP_IOS_BUILD': 'iOS Build',
-                        'SKIP_ANDROID_BUILD': 'Android Build',
-                        'SKIP_IOS_TESTS': 'iOS Tests',
-                        'SKIP_ANDROID_TESTS': 'Android Tests',
-                        'SKIP_IOS_LINT': 'iOS Lint',
-                        'SKIP_ANDROID_LINT': 'Android Lint',
-                        'SKIP_IOS_DEPLOY': 'iOS Deploy',
-                        'SKIP_ANDROID_DEPLOY': 'Android Deploy',
-                    ]
-                    skipMap.each { paramName, checkName ->
-                        if (params[paramName]) {
-                            publishChecks name: checkName, status: 'COMPLETED',
-                                conclusion: 'NEUTRAL', summary: "${checkName} skipped"
+
+                    // Compute effective skips
+                    // Priority: ONLY_STAGE > auto-detect rerun > manual SKIP_* params
+                    def effectiveSkips = [:]
+
+                    if (params.ONLY_STAGE?.trim()) {
+                        echo "ONLY_STAGE='${params.ONLY_STAGE}' — running only that stage"
+                        STAGE_TO_PARAM.each { stage, param ->
+                            effectiveSkips[param] = (stage != params.ONLY_STAGE.trim())
+                        }
+                    } else {
+                        effectiveSkips = computeRerunSkips(STAGE_TO_PARAM, CHECK_SUFFIX)
+                        // Merge with manual SKIP_* params (manual skip wins)
+                        STAGE_TO_PARAM.each { stage, param ->
+                            if (params[param]) {
+                                effectiveSkips[param] = true
+                            }
+                        }
+                    }
+
+                    env.EFFECTIVE_SKIPS = writeJSON(returnText: true, json: effectiveSkips)
+
+                    // Publish NEUTRAL for skipped stages
+                    STAGE_TO_PARAM.each { stageName, paramName ->
+                        if (effectiveSkips[paramName]) {
+                            def fullCheckName = "${stageName} ${CHECK_SUFFIX}"
+                            publishChecks name: fullCheckName, status: 'COMPLETED',
+                                conclusion: 'NEUTRAL', summary: "${fullCheckName} skipped"
                         }
                     }
                 }
@@ -58,13 +157,13 @@ pipeline {
         stage('Build') {
             parallel {
                 stage('iOS Build') {
-                    when { expression { !params.SKIP_IOS_BUILD } }
+                    when { expression { !readJSON(text: env.EFFECTIVE_SKIPS).SKIP_IOS_BUILD } }
                     steps {
                         script { runStageWithCheck('iOS Build') { echo 'Building iOS...' } }
                     }
                 }
                 stage('Android Build') {
-                    when { expression { !params.SKIP_ANDROID_BUILD } }
+                    when { expression { !readJSON(text: env.EFFECTIVE_SKIPS).SKIP_ANDROID_BUILD } }
                     steps {
                         script { runStageWithCheck('Android Build') { echo 'Building Android...' } }
                     }
@@ -75,15 +174,15 @@ pipeline {
         stage('Test') {
             parallel {
                 stage('iOS Tests') {
-                    when { expression { !params.SKIP_IOS_TESTS } }
+                    when { expression { !readJSON(text: env.EFFECTIVE_SKIPS).SKIP_IOS_TESTS } }
                     steps {
                         script { runStageWithCheck('iOS Tests') { echo 'Running iOS tests...' } }
                     }
                 }
                 stage('Android Tests') {
-                    when { expression { !params.SKIP_ANDROID_TESTS } }
+                    when { expression { !readJSON(text: env.EFFECTIVE_SKIPS).SKIP_ANDROID_TESTS } }
                     steps {
-                        script { runStageWithCheck('Android Tests') { echo 'Running Android tests...' } }
+                        script { runStageWithCheck('Android Tests') { throw new Exception('Random test failure') } }
                     }
                 }
             }
@@ -92,13 +191,13 @@ pipeline {
         stage('Quality') {
             parallel {
                 stage('iOS Lint') {
-                    when { expression { !params.SKIP_IOS_LINT } }
+                    when { expression { !readJSON(text: env.EFFECTIVE_SKIPS).SKIP_IOS_LINT } }
                     steps {
                         script { runStageWithCheck('iOS Lint') { echo 'Running iOS lint...' } }
                     }
                 }
                 stage('Android Lint') {
-                    when { expression { !params.SKIP_ANDROID_LINT } }
+                    when { expression { !readJSON(text: env.EFFECTIVE_SKIPS).SKIP_ANDROID_LINT } }
                     steps {
                         script { runStageWithCheck('Android Lint') { echo 'Running Android lint...' } }
                     }
@@ -109,13 +208,13 @@ pipeline {
         stage('Deploy') {
             parallel {
                 stage('iOS Deploy') {
-                    when { expression { !params.SKIP_IOS_DEPLOY } }
+                    when { expression { !readJSON(text: env.EFFECTIVE_SKIPS).SKIP_IOS_DEPLOY } }
                     steps {
                         script { runStageWithCheck('iOS Deploy') { echo 'Deploying iOS...' } }
                     }
                 }
                 stage('Android Deploy') {
-                    when { expression { !params.SKIP_ANDROID_DEPLOY } }
+                    when { expression { !readJSON(text: env.EFFECTIVE_SKIPS).SKIP_ANDROID_DEPLOY } }
                     steps {
                         script { runStageWithCheck('Android Deploy') { echo 'Deploying Android...' } }
                     }
