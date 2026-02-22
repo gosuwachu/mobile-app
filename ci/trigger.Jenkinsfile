@@ -27,6 +27,7 @@ pipeline {
     stages {
         stage('Start') {
             steps {
+                shell: 'env'
                 echo "Starting Mobile CI/CD Pipeline (4A-MB) on branch: ${env.BRANCH_TO_BUILD}"
             }
         }
