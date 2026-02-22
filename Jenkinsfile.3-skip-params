@@ -138,7 +138,7 @@ pipeline {
                         }
                     }
 
-                    env.EFFECTIVE_SKIPS = new groovy.json.JsonBuilder(effectiveSkips).toString()
+                    env.EFFECTIVE_SKIPS = writeJSON(returnText: true, json: effectiveSkips)
 
                     // Publish NEUTRAL for skipped stages
                     STAGE_TO_PARAM.each { stageName, paramName ->

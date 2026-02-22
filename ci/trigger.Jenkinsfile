@@ -122,7 +122,7 @@ pipeline {
                         stageSkips = computeRerunSkips(STAGE_NAMES, CHECK_SUFFIX)
                     }
 
-                    env.STAGE_SKIPS = new groovy.json.JsonBuilder(stageSkips).toString()
+                    env.STAGE_SKIPS = writeJSON(returnText: true, json: stageSkips)
 
                     // Publish NEUTRAL for skipped stages
                     stageSkips.each { stageName, skip ->
