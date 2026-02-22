@@ -35,6 +35,7 @@ pipeline {
             steps {
                 script {
                     echo 'Starting Mobile CI/CD Pipeline (Skip Params)...'
+                    sh 'env'
                     // Mark skipped stages as neutral
                     def skipMap = [
                         'SKIP_IOS_BUILD': 'iOS Build',

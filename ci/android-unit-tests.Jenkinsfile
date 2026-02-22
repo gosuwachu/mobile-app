@@ -3,7 +3,8 @@ pipeline {
     stages {
         stage('Android Unit Tests') {
             steps {
-                echo 'hello world'
+                // echo 'hello world'
+                throw new Exception('Random test failure')
             }
         }
     }
