@@ -1,5 +1,19 @@
-// Option 3: Parameterized Skip - Single Jenkinsfile with skip parameters
+// Option 3-MB: Parameterized Skip - Single Jenkinsfile with skip parameters
+// Publishes per-stage GitHub Checks for PR visibility
 // Re-run pipeline with SKIP_* parameters to resume from a point
+
+def runStageWithCheck(String checkName, Closure body) {
+    publishChecks name: checkName, status: 'IN_PROGRESS', summary: "Running ${checkName}..."
+    try {
+        body()
+        publishChecks name: checkName, status: 'COMPLETED',
+            conclusion: 'SUCCESS', summary: "${checkName} passed"
+    } catch (e) {
+        publishChecks name: checkName, status: 'COMPLETED',
+            conclusion: 'FAILURE', summary: "${checkName} failed: ${e.message}"
+        throw e
+    }
+}
 
 pipeline {
     agent any
@@ -18,7 +32,26 @@ pipeline {
     stages {
         stage('Start') {
             steps {
-                echo 'Starting Mobile CI/CD Pipeline (Skip Params)...'
+                script {
+                    echo 'Starting Mobile CI/CD Pipeline (Skip Params)...'
+                    // Mark skipped stages as neutral
+                    def skipMap = [
+                        'SKIP_IOS_BUILD': 'iOS Build',
+                        'SKIP_ANDROID_BUILD': 'Android Build',
+                        'SKIP_IOS_TESTS': 'iOS Tests',
+                        'SKIP_ANDROID_TESTS': 'Android Tests',
+                        'SKIP_IOS_LINT': 'iOS Lint',
+                        'SKIP_ANDROID_LINT': 'Android Lint',
+                        'SKIP_IOS_DEPLOY': 'iOS Deploy',
+                        'SKIP_ANDROID_DEPLOY': 'Android Deploy',
+                    ]
+                    skipMap.each { paramName, checkName ->
+                        if (params[paramName]) {
+                            publishChecks name: checkName, status: 'COMPLETED',
+                                conclusion: 'NEUTRAL', summary: "${checkName} skipped"
+                        }
+                    }
+                }
             }
         }
 
@@ -27,13 +60,13 @@ pipeline {
                 stage('iOS Build') {
                     when { expression { !params.SKIP_IOS_BUILD } }
                     steps {
-                        echo 'hello world'
+                        script { runStageWithCheck('iOS Build') { echo 'Building iOS...' } }
                     }
                 }
                 stage('Android Build') {
                     when { expression { !params.SKIP_ANDROID_BUILD } }
                     steps {
-                        echo 'hello world'
+                        script { runStageWithCheck('Android Build') { echo 'Building Android...' } }
                     }
                 }
             }
@@ -44,13 +77,13 @@ pipeline {
                 stage('iOS Tests') {
                     when { expression { !params.SKIP_IOS_TESTS } }
                     steps {
-                        echo 'hello world'
+                        script { runStageWithCheck('iOS Tests') { echo 'Running iOS tests...' } }
                     }
                 }
                 stage('Android Tests') {
                     when { expression { !params.SKIP_ANDROID_TESTS } }
                     steps {
-                        echo 'hello world'
+                        script { runStageWithCheck('Android Tests') { echo 'Running Android tests...' } }
                     }
                 }
             }
@@ -61,13 +94,13 @@ pipeline {
                 stage('iOS Lint') {
                     when { expression { !params.SKIP_IOS_LINT } }
                     steps {
-                        echo 'hello world'
+                        script { runStageWithCheck('iOS Lint') { echo 'Running iOS lint...' } }
                     }
                 }
                 stage('Android Lint') {
                     when { expression { !params.SKIP_ANDROID_LINT } }
                     steps {
-                        echo 'hello world'
+                        script { runStageWithCheck('Android Lint') { echo 'Running Android lint...' } }
                     }
                 }
             }
@@ -78,13 +111,13 @@ pipeline {
                 stage('iOS Deploy') {
                     when { expression { !params.SKIP_IOS_DEPLOY } }
                     steps {
-                        echo 'hello world'
+                        script { runStageWithCheck('iOS Deploy') { echo 'Deploying iOS...' } }
                     }
                 }
                 stage('Android Deploy') {
                     when { expression { !params.SKIP_ANDROID_DEPLOY } }
                     steps {
-                        echo 'hello world'
+                        script { runStageWithCheck('Android Deploy') { echo 'Deploying Android...' } }
                     }
                 }
             }
