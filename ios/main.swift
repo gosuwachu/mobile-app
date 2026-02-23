@@ -1,2 +1,2 @@
 // iOS app entry point
-print("Hello iOS")
+print("Hello iOS 2")
