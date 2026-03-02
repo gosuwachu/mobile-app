@@ -22,6 +22,60 @@ import groovy.transform.Field
     'ci/android-deploy',
 ]
 
+def checkCollaborator() {
+    if (!env.CHANGE_ID) {
+        return // not a PR build — allow
+    }
+    def author = env.CHANGE_AUTHOR
+    if (!author) {
+        echo 'WARNING: Could not determine PR author — allowing build'
+        return
+    }
+    echo "PR #${env.CHANGE_ID} by ${author} — checking collaborator status"
+    try {
+        def statusCode = 0
+        withCredentials([usernamePassword(credentialsId: 'github-app',
+                usernameVariable: 'GH_APP', passwordVariable: 'GH_TOKEN')]) {
+            statusCode = sh(
+                script: """curl -s -o /dev/null -w '%{http_code}' \
+                    -H "Authorization: token \$GH_TOKEN" \
+                    -H "Accept: application/vnd.github+json" \
+                    "https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/collaborators/${author}" """,
+                returnStdout: true
+            ).trim().toInteger()
+        }
+        if (statusCode == 204) {
+            echo "${author} is a collaborator — CI allowed"
+            return
+        }
+        echo "${author} is NOT a collaborator — checking for approved reviews"
+        def approved = false
+        withCredentials([usernamePassword(credentialsId: 'github-app',
+                usernameVariable: 'GH_APP', passwordVariable: 'GH_TOKEN')]) {
+            def reviews = sh(
+                script: """curl -s \
+                    -H "Authorization: token \$GH_TOKEN" \
+                    -H "Accept: application/vnd.github+json" \
+                    "https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/pulls/${env.CHANGE_ID}/reviews" """,
+                returnStdout: true
+            ).trim()
+            approved = reviews.contains('"state":"APPROVED"') || reviews.contains('"state": "APPROVED"')
+        }
+        if (approved) {
+            echo "PR has an approved review — CI allowed for non-collaborator ${author}"
+        } else {
+            echo "PR has no approved reviews — aborting CI for non-collaborator ${author}"
+            currentBuild.result = 'NOT_BUILT'
+            error("PR from non-collaborator ${author} requires an approved review before CI runs")
+        }
+    } catch (e) {
+        if (currentBuild.result == 'NOT_BUILT') {
+            throw e
+        }
+        echo "WARNING: Failed to check collaborator status: ${e.message} — allowing build"
+    }
+}
+
 def detectPlatforms() {
     if (!env.CHANGE_TARGET) {
         echo 'Not a PR build — running all platforms'
@@ -99,6 +153,8 @@ pipeline {
             steps {
                 script {
                     echo "Starting Mobile CI/CD Pipeline on branch: ${env.BRANCH_TO_BUILD}"
+
+                    checkCollaborator()
 
                     def platforms = detectPlatforms()
                     env.RUN_IOS = platforms.ios.toString()
