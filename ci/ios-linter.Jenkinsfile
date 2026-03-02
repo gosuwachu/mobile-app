@@ -1,4 +1,4 @@
-// Option 4B-MB: iOS Linter — publishes own GitHub commit status
+// iOS Linter — publishes own GitHub commit status
 
 def setGitHubStatus(String sha, String context, String state, String description) {
     withCredentials([usernamePassword(credentialsId: 'github-app',
@@ -29,7 +29,7 @@ pipeline {
         stage('iOS Linter') {
             steps {
                 script {
-                    withCommitStatus('ci/ios-linter (4B-MB)') {
+                    withCommitStatus('ci/ios-linter') {
                         echo 'Running iOS lint...'
                     }
                 }

@@ -1,4 +1,4 @@
-// Option 4B-MB: Android Deploy — publishes own GitHub commit status
+// Android Deploy — publishes own GitHub commit status
 
 def setGitHubStatus(String sha, String context, String state, String description) {
     withCredentials([usernamePassword(credentialsId: 'github-app',
@@ -29,7 +29,7 @@ pipeline {
         stage('Android Deploy') {
             steps {
                 script {
-                    withCommitStatus('ci/android-deploy (4B-MB)') {
+                    withCommitStatus('ci/android-deploy') {
                         echo 'Deploying Android...'
                     }
                 }

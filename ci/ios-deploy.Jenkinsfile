@@ -1,4 +1,4 @@
-// Option 4B-MB: iOS Deploy — publishes own GitHub commit status
+// iOS Deploy — publishes own GitHub commit status
 
 def setGitHubStatus(String sha, String context, String state, String description) {
     withCredentials([usernamePassword(credentialsId: 'github-app',
@@ -29,7 +29,7 @@ pipeline {
         stage('iOS Deploy') {
             steps {
                 script {
-                    withCommitStatus('ci/ios-deploy (4B-MB)') {
+                    withCommitStatus('ci/ios-deploy') {
                         echo 'Deploying iOS...'
                     }
                 }

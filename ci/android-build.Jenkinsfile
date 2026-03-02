@@ -1,4 +1,4 @@
-// Option 4B-MB: Android Build — publishes own GitHub commit status
+// Android Build — publishes own GitHub commit status
 
 def setGitHubStatus(String sha, String context, String state, String description) {
     withCredentials([usernamePassword(credentialsId: 'github-app',
@@ -29,7 +29,7 @@ pipeline {
         stage('Android Build') {
             steps {
                 script {
-                    withCommitStatus('ci/android-build (4B-MB)') {
+                    withCommitStatus('ci/android-build') {
                         echo 'Building Android...'
                     }
                 }

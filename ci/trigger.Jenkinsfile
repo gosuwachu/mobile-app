@@ -1,4 +1,4 @@
-// Option 4B-MB: Trigger Jenkinsfile - orchestrates pipeline jobs (multibranch variant)
+// Trigger Jenkinsfile - orchestrates pipeline jobs (multibranch variant)
 // Pure orchestrator — child jobs publish their own commit statuses
 // No publishChecks here; each child job handles its own GitHub status reporting
 // PR diff filtering: only triggers iOS or Android jobs based on changed files
@@ -9,17 +9,17 @@ import groovy.transform.Field
 @Field GITHUB_REPO = 'jenkinsfiles-test-app'
 
 @Field IOS_CONTEXTS = [
-    'ci/ios-build (4B-MB)',
-    'ci/ios-unit-tests (4B-MB)',
-    'ci/ios-linter (4B-MB)',
-    'ci/ios-deploy (4B-MB)',
+    'ci/ios-build',
+    'ci/ios-unit-tests',
+    'ci/ios-linter',
+    'ci/ios-deploy',
 ]
 
 @Field ANDROID_CONTEXTS = [
-    'ci/android-build (4B-MB)',
-    'ci/android-unit-tests (4B-MB)',
-    'ci/android-linter (4B-MB)',
-    'ci/android-deploy (4B-MB)',
+    'ci/android-build',
+    'ci/android-unit-tests',
+    'ci/android-linter',
+    'ci/android-deploy',
 ]
 
 def detectPlatforms() {
@@ -98,7 +98,7 @@ pipeline {
         stage('Start') {
             steps {
                 script {
-                    echo "Starting Mobile CI/CD Pipeline (4B-MB) on branch: ${env.BRANCH_TO_BUILD}"
+                    echo "Starting Mobile CI/CD Pipeline on branch: ${env.BRANCH_TO_BUILD}"
 
                     def platforms = detectPlatforms()
                     env.RUN_IOS = platforms.ios.toString()
@@ -121,7 +121,7 @@ pipeline {
                 stage('iOS Build') {
                     when { expression { env.RUN_IOS == 'true' } }
                     steps {
-                        build job: 'pipeline-4b-mb/ios-build',
+                        build job: 'pipeline/ios-build',
                               parameters: [string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD)],
                               wait: true
                     }
@@ -129,7 +129,7 @@ pipeline {
                 stage('Android Build') {
                     when { expression { env.RUN_ANDROID == 'true' } }
                     steps {
-                        build job: 'pipeline-4b-mb/android-build',
+                        build job: 'pipeline/android-build',
                               parameters: [string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD)],
                               wait: true
                     }
@@ -137,7 +137,7 @@ pipeline {
                 stage('iOS Tests') {
                     when { expression { env.RUN_IOS == 'true' } }
                     steps {
-                        build job: 'pipeline-4b-mb/ios-unit-tests',
+                        build job: 'pipeline/ios-unit-tests',
                               parameters: [string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD)],
                               wait: true
                     }
@@ -145,7 +145,7 @@ pipeline {
                 stage('Android Tests') {
                     when { expression { env.RUN_ANDROID == 'true' } }
                     steps {
-                        build job: 'pipeline-4b-mb/android-unit-tests',
+                        build job: 'pipeline/android-unit-tests',
                               parameters: [string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD)],
                               wait: true
                     }
@@ -153,7 +153,7 @@ pipeline {
                 stage('iOS Lint') {
                     when { expression { env.RUN_IOS == 'true' } }
                     steps {
-                        build job: 'pipeline-4b-mb/ios-linter',
+                        build job: 'pipeline/ios-linter',
                               parameters: [string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD)],
                               wait: true
                     }
@@ -161,7 +161,7 @@ pipeline {
                 stage('Android Lint') {
                     when { expression { env.RUN_ANDROID == 'true' } }
                     steps {
-                        build job: 'pipeline-4b-mb/android-linter',
+                        build job: 'pipeline/android-linter',
                               parameters: [string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD)],
                               wait: true
                     }
@@ -174,7 +174,7 @@ pipeline {
                 stage('iOS Deploy') {
                     when { expression { env.RUN_IOS == 'true' } }
                     steps {
-                        build job: 'pipeline-4b-mb/ios-deploy',
+                        build job: 'pipeline/ios-deploy',
                               parameters: [string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD)],
                               wait: true
                     }
@@ -182,7 +182,7 @@ pipeline {
                 stage('Android Deploy') {
                     when { expression { env.RUN_ANDROID == 'true' } }
                     steps {
-                        build job: 'pipeline-4b-mb/android-deploy',
+                        build job: 'pipeline/android-deploy',
                               parameters: [string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD)],
                               wait: true
                     }

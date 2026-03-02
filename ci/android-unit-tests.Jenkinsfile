@@ -1,4 +1,4 @@
-// Option 4B-MB: Android Unit Tests — publishes own GitHub commit status
+// Android Unit Tests — publishes own GitHub commit status
 
 def setGitHubStatus(String sha, String context, String state, String description) {
     withCredentials([usernamePassword(credentialsId: 'github-app',
@@ -29,7 +29,7 @@ pipeline {
         stage('Android Unit Tests') {
             steps {
                 script {
-                    withCommitStatus('ci/android-unit-tests (4B-MB)') {
+                    withCommitStatus('ci/android-unit-tests') {
                         // echo 'Running Android tests...'
                         throw new Exception('Random test failure')
                     }

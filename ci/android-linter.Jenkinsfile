@@ -1,4 +1,4 @@
-// Option 4B-MB: Android Linter — publishes own GitHub commit status
+// Android Linter — publishes own GitHub commit status
 
 def setGitHubStatus(String sha, String context, String state, String description) {
     withCredentials([usernamePassword(credentialsId: 'github-app',
@@ -29,7 +29,7 @@ pipeline {
         stage('Android Linter') {
             steps {
                 script {
-                    withCommitStatus('ci/android-linter (4B-MB)') {
+                    withCommitStatus('ci/android-linter') {
                         echo 'Running Android lint...'
                     }
                 }

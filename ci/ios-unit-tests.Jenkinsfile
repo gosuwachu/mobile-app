@@ -1,4 +1,4 @@
-// Option 4B-MB: iOS Unit Tests — publishes own GitHub commit status
+// iOS Unit Tests — publishes own GitHub commit status
 
 
 def setGitHubStatus(String sha, String context, String state, String description) {
@@ -30,7 +30,7 @@ pipeline {
         stage('iOS Unit Tests') {
             steps {
                 script {
-                    withCommitStatus('ci/ios-unit-tests (4B-MB)') {
+                    withCommitStatus('ci/ios-unit-tests') {
                         echo 'Running iOS tests...'
                     }
                 }
