@@ -26,7 +26,7 @@ def checkCollaborator() {
     if (!env.CHANGE_ID) {
         return // not a PR build — allow
     }
-    def author = env.CHANGE_AUTHOR + "aaa"
+    def author = env.CHANGE_AUTHOR
     if (!author) {
         echo 'WARNING: Could not determine PR author — allowing build'
         return
