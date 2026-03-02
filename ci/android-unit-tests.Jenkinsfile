@@ -30,8 +30,7 @@ pipeline {
             steps {
                 script {
                     withCommitStatus('ci/android-unit-tests') {
-                        // echo 'Running Android tests...'
-                        throw new Exception('Random test failure')
+                        echo 'Running Android tests...'
                     }
                 }
             }
