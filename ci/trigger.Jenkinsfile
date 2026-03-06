@@ -180,6 +180,7 @@ pipeline {
                         build job: 'pipeline/omnibus',
                               parameters: [
                                   string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD),
+                                  string(name: 'COMMIT_SHA', value: env.GIT_COMMIT),
                                   string(name: 'JENKINSFILE', value: 'ci/ios/ios-build.Jenkinsfile')
                               ],
                               wait: true
@@ -191,6 +192,7 @@ pipeline {
                         build job: 'pipeline/omnibus',
                               parameters: [
                                   string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD),
+                                  string(name: 'COMMIT_SHA', value: env.GIT_COMMIT),
                                   string(name: 'JENKINSFILE', value: 'ci/android/android-build.Jenkinsfile')
                               ],
                               wait: true
@@ -202,6 +204,7 @@ pipeline {
                         build job: 'pipeline/omnibus',
                               parameters: [
                                   string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD),
+                                  string(name: 'COMMIT_SHA', value: env.GIT_COMMIT),
                                   string(name: 'JENKINSFILE', value: 'ci/ios/ios-unit-tests.Jenkinsfile')
                               ],
                               wait: true
@@ -213,6 +216,7 @@ pipeline {
                         build job: 'pipeline/omnibus',
                               parameters: [
                                   string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD),
+                                  string(name: 'COMMIT_SHA', value: env.GIT_COMMIT),
                                   string(name: 'JENKINSFILE', value: 'ci/android/android-unit-tests.Jenkinsfile')
                               ],
                               wait: true
@@ -224,6 +228,7 @@ pipeline {
                         build job: 'pipeline/omnibus',
                               parameters: [
                                   string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD),
+                                  string(name: 'COMMIT_SHA', value: env.GIT_COMMIT),
                                   string(name: 'JENKINSFILE', value: 'ci/ios/ios-linter.Jenkinsfile')
                               ],
                               wait: true
@@ -235,6 +240,7 @@ pipeline {
                         build job: 'pipeline/omnibus',
                               parameters: [
                                   string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD),
+                                  string(name: 'COMMIT_SHA', value: env.GIT_COMMIT),
                                   string(name: 'JENKINSFILE', value: 'ci/android/android-linter.Jenkinsfile')
                               ],
                               wait: true
@@ -251,6 +257,7 @@ pipeline {
                         build job: 'pipeline/omnibus',
                               parameters: [
                                   string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD),
+                                  string(name: 'COMMIT_SHA', value: env.GIT_COMMIT),
                                   string(name: 'JENKINSFILE', value: 'ci/ios/ios-deploy.Jenkinsfile')
                               ],
                               wait: true
@@ -262,6 +269,7 @@ pipeline {
                         build job: 'pipeline/omnibus',
                               parameters: [
                                   string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD),
+                                  string(name: 'COMMIT_SHA', value: env.GIT_COMMIT),
                                   string(name: 'JENKINSFILE', value: 'ci/android/android-deploy.Jenkinsfile')
                               ],
                               wait: true
