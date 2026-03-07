@@ -1,4 +1,4 @@
-# App Repo (jenkinsfiles-test-app)
+# App Repo (mobile-app)
 
 Mobile app repository for the Jenkins CI/CD test environment. Contains the orchestrator pipeline and platform source directories.
 
@@ -22,6 +22,7 @@ The trigger orchestrator:
 4. Triggers child jobs in parallel via the omnibus job (`pipeline/omnibus`), passing:
    - `BRANCH_NAME` — the branch to build
    - `COMMIT_SHA` — pinned to `env.GIT_COMMIT` so all child jobs use the same commit
+   - `CHANGE_ID` — PR number (from Jenkins native `env.CHANGE_ID`, empty for branch builds)
    - `JENKINSFILE` — path to the child Jenkinsfile in the CI repo
    - `CI_BRANCH` — CI repo branch to checkout Jenkinsfiles from (defaults to `main`, configurable via pipeline parameter)
 
@@ -30,7 +31,8 @@ The trigger orchestrator:
 ```
 Start (collaborator check + platform detection)
   → Build & Quality (parallel: iOS/Android build, tests, lint)
-    → Deploy (parallel: iOS/Android deploy)
+      Build jobs trigger their corresponding deploy jobs directly via omnibus,
+      passing CONTEXT_JSON (structured JSON from the build step's stdout)
 ```
 
 ### Commit Status Contexts
@@ -58,5 +60,5 @@ Key sections in `trigger.Jenkinsfile`:
 
 ## Companion Repos
 
-- [jenkinsfiles-test](https://github.com/gosuwachu/jenkinsfiles-test) — Jenkins Docker environment, Job DSL, seed job
-- [jenkinsfiles-test-app-ci](https://github.com/gosuwachu/jenkinsfiles-test-app-ci) — child Jenkinsfiles and Python CI CLI
+- [jenkins-setup](https://github.com/gosuwachu/jenkins-setup) — Jenkins Docker environment, Job DSL, seed job
+- [mobile-app-ci](https://github.com/gosuwachu/mobile-app-ci) — child Jenkinsfiles and Python CI CLI
