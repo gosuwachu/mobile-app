@@ -1,4 +1,4 @@
-# App Repo (jenkinsfiles-test-app)
+# App Repo (mobile-app)
 
 Mobile app repository for the Jenkins CI/CD test environment. Contains the orchestrator pipeline and platform source directories.
 
@@ -60,5 +60,5 @@ Key sections in `trigger.Jenkinsfile`:
 
 ## Companion Repos
 
-- [jenkinsfiles-test](https://github.com/gosuwachu/jenkinsfiles-test) — Jenkins Docker environment, Job DSL, seed job
-- [jenkinsfiles-test-app-ci](https://github.com/gosuwachu/jenkinsfiles-test-app-ci) — child Jenkinsfiles and Python CI CLI
+- [jenkins-setup](https://github.com/gosuwachu/jenkins-setup) — Jenkins Docker environment, Job DSL, seed job
+- [mobile-app-ci](https://github.com/gosuwachu/mobile-app-ci) — child Jenkinsfiles and Python CI CLI
