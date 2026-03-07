@@ -19,7 +19,7 @@ The trigger orchestrator:
 1. Checks if the PR author is a collaborator (blocks non-collaborators without approved reviews)
 2. Detects which platforms changed (compares PR diff against `ios/` and `android/` directories)
 3. Publishes "skipped" statuses for unchanged platforms
-4. Triggers child jobs in parallel via the omnibus job (`mobile-app/omnibus`), passing:
+4. Triggers child jobs in parallel via the omnibus job (`mobile-app-support/omnibus`), passing:
    - `BRANCH_NAME` — the branch to build
    - `COMMIT_SHA` — pinned to `env.GIT_COMMIT` so all child jobs use the same commit
    - `CHANGE_ID` — PR number (from Jenkins native `env.CHANGE_ID`, empty for branch builds)
