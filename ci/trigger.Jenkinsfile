@@ -185,6 +185,7 @@ pipeline {
                               parameters: [
                                   string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD),
                                   string(name: 'COMMIT_SHA', value: env.GIT_COMMIT),
+                                  string(name: 'PR_NUMBER', value: env.CHANGE_ID ?: ''),
                                   string(name: 'JENKINSFILE', value: 'ci/ios/ios-build.Jenkinsfile'),
                                   string(name: 'CI_BRANCH', value: params.CI_BRANCH)
                               ],
@@ -198,6 +199,7 @@ pipeline {
                               parameters: [
                                   string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD),
                                   string(name: 'COMMIT_SHA', value: env.GIT_COMMIT),
+                                  string(name: 'PR_NUMBER', value: env.CHANGE_ID ?: ''),
                                   string(name: 'JENKINSFILE', value: 'ci/android/android-build.Jenkinsfile'),
                                   string(name: 'CI_BRANCH', value: params.CI_BRANCH)
                               ],
@@ -211,6 +213,7 @@ pipeline {
                               parameters: [
                                   string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD),
                                   string(name: 'COMMIT_SHA', value: env.GIT_COMMIT),
+                                  string(name: 'PR_NUMBER', value: env.CHANGE_ID ?: ''),
                                   string(name: 'JENKINSFILE', value: 'ci/ios/ios-unit-tests.Jenkinsfile'),
                                   string(name: 'CI_BRANCH', value: params.CI_BRANCH)
                               ],
@@ -224,6 +227,7 @@ pipeline {
                               parameters: [
                                   string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD),
                                   string(name: 'COMMIT_SHA', value: env.GIT_COMMIT),
+                                  string(name: 'PR_NUMBER', value: env.CHANGE_ID ?: ''),
                                   string(name: 'JENKINSFILE', value: 'ci/android/android-unit-tests.Jenkinsfile'),
                                   string(name: 'CI_BRANCH', value: params.CI_BRANCH)
                               ],
@@ -237,6 +241,7 @@ pipeline {
                               parameters: [
                                   string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD),
                                   string(name: 'COMMIT_SHA', value: env.GIT_COMMIT),
+                                  string(name: 'PR_NUMBER', value: env.CHANGE_ID ?: ''),
                                   string(name: 'JENKINSFILE', value: 'ci/ios/ios-linter.Jenkinsfile'),
                                   string(name: 'CI_BRANCH', value: params.CI_BRANCH)
                               ],
@@ -250,6 +255,7 @@ pipeline {
                               parameters: [
                                   string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD),
                                   string(name: 'COMMIT_SHA', value: env.GIT_COMMIT),
+                                  string(name: 'PR_NUMBER', value: env.CHANGE_ID ?: ''),
                                   string(name: 'JENKINSFILE', value: 'ci/android/android-linter.Jenkinsfile'),
                                   string(name: 'CI_BRANCH', value: params.CI_BRANCH)
                               ],
@@ -268,6 +274,7 @@ pipeline {
                               parameters: [
                                   string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD),
                                   string(name: 'COMMIT_SHA', value: env.GIT_COMMIT),
+                                  string(name: 'PR_NUMBER', value: env.CHANGE_ID ?: ''),
                                   string(name: 'JENKINSFILE', value: 'ci/ios/ios-deploy.Jenkinsfile'),
                                   string(name: 'CI_BRANCH', value: params.CI_BRANCH)
                               ],
@@ -281,6 +288,7 @@ pipeline {
                               parameters: [
                                   string(name: 'BRANCH_NAME', value: env.BRANCH_TO_BUILD),
                                   string(name: 'COMMIT_SHA', value: env.GIT_COMMIT),
+                                  string(name: 'PR_NUMBER', value: env.CHANGE_ID ?: ''),
                                   string(name: 'JENKINSFILE', value: 'ci/android/android-deploy.Jenkinsfile'),
                                   string(name: 'CI_BRANCH', value: params.CI_BRANCH)
                               ],
