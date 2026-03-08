@@ -5,6 +5,7 @@ Mobile app repository for the Jenkins CI/CD test environment. Contains the orche
 ## Project Structure
 
 ```
+├── fast                             # Local CI runner (./fast ready, ./fast ios build)
 ├── ci/
 │   └── trigger.Jenkinsfile          # Orchestrator pipeline (multibranch)
 ├── ios/
@@ -21,6 +22,15 @@ Mobile app repository for the Jenkins CI/CD test environment. Contains the orche
         ├── lint.sh                  # Android linter (simulates gradle lint)
         ├── unit-tests.sh            # Android unit tests
         └── ui-tests.sh             # Android UI tests
+```
+
+## Local Development
+
+```bash
+./fast ready                    # Run all checks (build, unit-tests, linter) for both platforms
+./fast ios ready                # Run all checks for iOS only
+./fast ios build                # Run a single step
+./fast ios alpha-build          # Run alpha build
 ```
 
 ## How It Works

@@ -1,0 +1,129 @@
+#!/usr/bin/env python3
+"""Run CI checks locally with colored output."""
+
+import os
+import subprocess
+import sys
+import time
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+PLATFORMS = ["ios", "android"]
+
+STEP_SCRIPTS = {
+    "build": "build.sh",
+    "unit-tests": "unit-tests.sh",
+    "linter": "lint.sh",
+    "ui-tests": "ui-tests.sh",
+    "alpha-build": "build.sh",
+    "production-build": "build.sh",
+}
+
+READY_STEPS = ["build", "unit-tests", "linter"]
+
+USE_COLOR = sys.stderr.isatty() and "NO_COLOR" not in os.environ
+
+BOLD = "\033[1m" if USE_COLOR else ""
+DIM = "\033[2m" if USE_COLOR else ""
+CYAN = "\033[36m" if USE_COLOR else ""
+GREEN = "\033[32m" if USE_COLOR else ""
+RED = "\033[31m" if USE_COLOR else ""
+RESET = "\033[0m" if USE_COLOR else ""
+
+
+def step_name(platform, step):
+    return f"{platform.upper()} {step}"
+
+
+def script_path(platform, step):
+    return f"{platform}/{platform}_build/{STEP_SCRIPTS[step]}"
+
+
+def run_step(platform, step):
+    name = step_name(platform, step)
+    path = script_path(platform, step)
+    full_path = os.path.join(SCRIPT_DIR, path)
+
+    if not os.path.exists(full_path):
+        print(f"{RED}{BOLD}  ✗ {name}{RESET} — script not found: {path}", file=sys.stderr)
+        return False, 0.0
+
+    print(f"{CYAN}{BOLD}==> {name}{RESET}", file=sys.stderr)
+    print(f"{DIM}    {path}{RESET}", file=sys.stderr)
+
+    start = time.monotonic()
+    result = subprocess.run(
+        ["bash", path], cwd=SCRIPT_DIR, capture_output=True, text=True,
+    )
+    elapsed = time.monotonic() - start
+
+    if result.returncode == 0:
+        print(f"{GREEN}{BOLD}  ✓ {name}{RESET} {DIM}({elapsed:.1f}s){RESET}", file=sys.stderr)
+    else:
+        print(f"{RED}{BOLD}  ✗ {name}{RESET} {DIM}({elapsed:.1f}s){RESET}", file=sys.stderr)
+        if result.stderr:
+            for line in result.stderr.strip().splitlines():
+                print(f"    {line}", file=sys.stderr)
+
+    return result.returncode == 0, elapsed
+
+
+def run_ready(platforms):
+    results = []
+    for platform in platforms:
+        for step in READY_STEPS:
+            ok, elapsed = run_step(platform, step)
+            results.append((platform, step, ok, elapsed))
+        print(file=sys.stderr)
+
+    print(f"{BOLD}Summary{RESET}", file=sys.stderr)
+    all_ok = True
+    for platform, step, ok, elapsed in results:
+        name = step_name(platform, step)
+        if ok:
+            print(f"  {GREEN}✓{RESET} {name} {DIM}({elapsed:.1f}s){RESET}", file=sys.stderr)
+        else:
+            print(f"  {RED}✗{RESET} {name} {DIM}({elapsed:.1f}s){RESET}", file=sys.stderr)
+            all_ok = False
+
+    total = sum(e for _, _, _, e in results)
+    print(f"\n{DIM}Total: {total:.1f}s{RESET}", file=sys.stderr)
+    return all_ok
+
+
+def main():
+    args = sys.argv[1:]
+
+    if not args or args in [["-h"], ["--help"]]:
+        print("Usage: ./fast ready", file=sys.stderr)
+        print("       ./fast <platform> ready", file=sys.stderr)
+        print("       ./fast <platform> <step>", file=sys.stderr)
+        print(f"\nPlatforms: {', '.join(PLATFORMS)}", file=sys.stderr)
+        print(f"Steps: {', '.join(STEP_SCRIPTS)}", file=sys.stderr)
+        print("Ready steps: " + ", ".join(READY_STEPS), file=sys.stderr)
+        sys.exit(0)
+
+    if args == ["ready"]:
+        ok = run_ready(PLATFORMS)
+        sys.exit(0 if ok else 1)
+
+    if len(args) == 2:
+        platform, step = args
+        if platform not in PLATFORMS:
+            print(f"Unknown platform: {platform}", file=sys.stderr)
+            sys.exit(2)
+        if step == "ready":
+            ok = run_ready([platform])
+            sys.exit(0 if ok else 1)
+        if step not in STEP_SCRIPTS:
+            print(f"Unknown step: {step}", file=sys.stderr)
+            sys.exit(2)
+        ok, _ = run_step(platform, step)
+        sys.exit(0 if ok else 1)
+
+    print(f"Invalid arguments: {' '.join(args)}", file=sys.stderr)
+    sys.exit(2)
+
+
+if __name__ == "__main__":
+    main()
