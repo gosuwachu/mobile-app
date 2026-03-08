@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-echo "=== iOS Build ==="
-echo "Simulating: xcodebuild -project App.xcodeproj -scheme App -configuration Debug build"
+echo "=== iOS Build ===" >&2
+echo "Simulating: xcodebuild -project App.xcodeproj -scheme App -configuration Debug build" >&2
 sleep 3
-echo "Build succeeded."
+echo "Build succeeded." >&2
